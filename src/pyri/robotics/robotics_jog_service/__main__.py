@@ -355,14 +355,18 @@ class RoboticsJog_impl(object):
 
         if self.robot is not None:
             vel2 = RRN.NamedArrayToArray(vel)[0]
-            R_axis = vel2[0:3]*np.deg2rad(45)
-            P_axis = vel2[3:6]*0.254
-            ## Jog the robot in cartesian space
-            try:
-                # calculate the required joint speeds (q_dot)
-                qdot = self.update_qdot2(R_axis,P_axis, speed_perc) 
+            vel2[0:3] = vel2[0:3] * np.deg2rad(45)
+            vel2[3:6] = vel2[3:6] * 0.254
 
-                self.robot.jog_joint(qdot, 0.2, False)
+
+            # Convert vel2 to SpatialVelocity and store it in the RRMap
+            geom_util = GeometryUtil(client_obj=self.robot)
+            v_des = geom_util.array_to_spatial_velocity(vel2 * speed_perc * 0.01)
+            v_des2 = {0:v_des}
+
+            # Jog the robot in cartesian space
+            try:
+                self.robot.jog_cartesian(v_des2, 0.2, False)
             except:
                 traceback.print_exc() 
 
